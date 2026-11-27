@@ -18,14 +18,6 @@ class PokeetFloatingNav extends StatefulWidget {
 
 class _PokeetFloatingNavState extends State<PokeetFloatingNav>
     with TickerProviderStateMixin {
-  static const _icons = [
-    Icons.home_rounded,
-    Icons.swap_horizontal_circle_outlined,
-    Icons.pie_chart_outline_rounded,
-    Icons.edit_note_rounded,
-    Icons.settings_outlined,
-  ];
-
   late final AnimationController _morphCtrl;
   late final AnimationController _spinCtrl;
   late final Ticker _springTicker;
@@ -89,9 +81,9 @@ class _PokeetFloatingNavState extends State<PokeetFloatingNav>
   }
 
   BorderRadius _morphRadius(double t, double size) {
-    List<double> k0 = [0.40, 0.60, 0.70, 0.30, 0.40, 0.50, 0.60, 0.50];
-    List<double> k1 = [0.70, 0.30, 0.50, 0.50, 0.30, 0.30, 0.70, 0.70];
-    List<double> k2 = [1.00, 0.60, 0.60, 1.00, 1.00, 1.00, 0.60, 0.60];
+    const k0 = [0.40, 0.60, 0.70, 0.30, 0.40, 0.50, 0.60, 0.50];
+    const k1 = [0.70, 0.30, 0.50, 0.50, 0.30, 0.30, 0.70, 0.70];
+    const k2 = [1.00, 0.60, 0.60, 1.00, 1.00, 1.00, 0.60, 0.60];
 
     late List<double> a, b;
     late double p;
@@ -156,20 +148,20 @@ class _PokeetFloatingNavState extends State<PokeetFloatingNav>
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final itemW = constraints.maxWidth / _icons.length;
+            final itemW = constraints.maxWidth / 5;
             final sx = math.min(1.35, 1.0 + _v.abs() * 3.2);
             final sy = math.max(0.75, 1.0 - _v.abs() * 1.6);
 
             return GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onHorizontalDragStart: (d) {
+              onHorizontalDragStart: (_) {
                 _dragging = true;
                 _springTicker.stop();
                 _v = 0;
               },
               onHorizontalDragUpdate: (d) {
-                final nx = ((d.localPosition.dx - itemW / 2) / itemW)
-                    .clamp(0.0, (_icons.length - 1).toDouble());
+                final nx =
+                    ((d.localPosition.dx - itemW / 2) / itemW).clamp(0.0, 4.0);
                 setState(() {
                   _v = (nx - _x) * 0.5;
                   _x = nx;
@@ -177,7 +169,7 @@ class _PokeetFloatingNavState extends State<PokeetFloatingNav>
               },
               onHorizontalDragEnd: (_) {
                 _dragging = false;
-                final idx = _x.round().clamp(0, _icons.length - 1);
+                final idx = _x.round().clamp(0, 4);
                 _goTo(idx.toDouble());
                 if (idx != widget.currentIndex) {
                   widget.onTap(idx);
@@ -224,8 +216,13 @@ class _PokeetFloatingNavState extends State<PokeetFloatingNav>
                     ),
                   ),
                   Row(
-                    children: List.generate(_icons.length, (i) {
+                    children: List.generate(5, (i) {
                       final active = i == widget.currentIndex;
+                      final iconColor = active
+                          ? (isDark ? Colors.white : const Color(0xFF06402B))
+                          : (isDark
+                              ? const Color(0xFF8FA59D)
+                              : const Color(0xFF5F6B7A));
                       return Expanded(
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
@@ -239,16 +236,13 @@ class _PokeetFloatingNavState extends State<PokeetFloatingNav>
                               child: AnimatedScale(
                                 duration: const Duration(milliseconds: 220),
                                 scale: active ? 1.12 : 1.0,
-                                child: Icon(
-                                  _icons[i],
-                                  size: 26,
-                                  color: active
-                                      ? (isDark
-                                          ? Colors.white
-                                          : const Color(0xFF06402B))
-                                      : (isDark
-                                          ? const Color(0xFF8FA59D)
-                                          : const Color(0xFF5F6B7A)),
+                                child: CustomPaint(
+                                  size: const Size(24, 24),
+                                  painter: _PokeetNavIconPainter(
+                                    index: i,
+                                    color: iconColor,
+                                    active: active,
+                                  ),
                                 ),
                               ),
                             ),
@@ -265,4 +259,160 @@ class _PokeetFloatingNavState extends State<PokeetFloatingNav>
       ),
     );
   }
+}
+
+class _PokeetNavIconPainter extends CustomPainter {
+  final int index;
+  final Color color;
+  final bool active;
+
+  const _PokeetNavIconPainter({
+    required this.index,
+    required this.color,
+    required this.active,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final s = size.width / 24.0;
+    final stroke = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0 * s
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    switch (index) {
+      case 0: // Home (solid fill with arch door when active, crisp outline when inactive)
+        final house = Path()
+          ..moveTo(3.0 * s, 10.5 * s)
+          ..lineTo(12.0 * s, 3.0 * s)
+          ..lineTo(21.0 * s, 10.5 * s)
+          ..lineTo(19.0 * s, 10.5 * s)
+          ..lineTo(19.0 * s, 19.5 * s)
+          ..quadraticBezierTo(19.0 * s, 20.5 * s, 18.0 * s, 20.5 * s)
+          ..lineTo(14.5 * s, 20.5 * s)
+          ..lineTo(14.5 * s, 15.5 * s)
+          ..arcToPoint(
+            Offset(9.5 * s, 15.5 * s),
+            radius: Radius.circular(2.5 * s),
+            clockwise: false,
+          )
+          ..lineTo(9.5 * s, 20.5 * s)
+          ..lineTo(6.0 * s, 20.5 * s)
+          ..quadraticBezierTo(5.0 * s, 20.5 * s, 5.0 * s, 19.5 * s)
+          ..lineTo(5.0 * s, 10.5 * s)
+          ..close();
+
+        if (active) {
+          canvas.drawPath(
+            house,
+            Paint()
+              ..color = color
+              ..style = PaintingStyle.fill,
+          );
+          canvas.drawPath(
+            house,
+            stroke..strokeWidth = 1.2 * s,
+          );
+        } else {
+          canvas.drawPath(house, stroke);
+        }
+        break;
+
+      case 1: // Transactions (circle with up arrow on left, down arrow on right)
+        canvas.drawCircle(Offset(12 * s, 12 * s), 9.5 * s, stroke);
+        final arrows = Path()
+          // Left UP arrow
+          ..moveTo(9.2 * s, 15.8 * s)
+          ..lineTo(9.2 * s, 8.2 * s)
+          ..moveTo(6.8 * s, 10.6 * s)
+          ..lineTo(9.2 * s, 8.2 * s)
+          ..lineTo(11.6 * s, 10.6 * s)
+          // Right DOWN arrow
+          ..moveTo(14.8 * s, 8.2 * s)
+          ..lineTo(14.8 * s, 15.8 * s)
+          ..moveTo(12.4 * s, 13.4 * s)
+          ..lineTo(14.8 * s, 15.8 * s)
+          ..lineTo(17.2 * s, 13.4 * s);
+        canvas.drawPath(arrows, stroke);
+        break;
+
+      case 2: // Analysis (quarter pie wedge)
+        canvas.drawCircle(Offset(12 * s, 12 * s), 9.5 * s, stroke);
+        final wedge = Path()
+          ..moveTo(12 * s, 2.5 * s)
+          ..lineTo(12 * s, 12 * s)
+          ..lineTo(21.5 * s, 12 * s);
+        canvas.drawPath(wedge, stroke);
+        break;
+
+      case 3: // Notepad (3 staggered lines + diagonal pencil)
+        final lines = Path()
+          ..moveTo(3.5 * s, 6.5 * s)
+          ..lineTo(16.5 * s, 6.5 * s)
+          ..moveTo(3.5 * s, 11.5 * s)
+          ..lineTo(13.5 * s, 11.5 * s)
+          ..moveTo(3.5 * s, 16.5 * s)
+          ..lineTo(9.5 * s, 16.5 * s);
+        canvas.drawPath(lines, stroke);
+
+        final pencil = Path()
+          ..moveTo(18.2 * s, 11.8 * s)
+          ..arcToPoint(
+            Offset(20.6 * s, 14.2 * s),
+            radius: Radius.circular(1.7 * s),
+            clockwise: true,
+          )
+          ..lineTo(14.4 * s, 20.4 * s)
+          ..lineTo(11.4 * s, 21.0 * s)
+          ..lineTo(12.0 * s, 18.0 * s)
+          ..close();
+        canvas.drawPath(pencil, stroke);
+        break;
+
+      case 4: // Settings (6-tooth gear)
+        canvas.drawCircle(Offset(12 * s, 12 * s), 3.0 * s, stroke);
+        final gear = Path();
+        const teeth = 6;
+        final rIn = 7.4 * s;
+        final rOut = 9.8 * s;
+        for (int k = 0; k < teeth; k++) {
+          final base = (k * 2 * math.pi / teeth) - math.pi / 6;
+          final a1 = base - 0.34;
+          final a2 = base - 0.19;
+          final a3 = base + 0.19;
+          final a4 = base + 0.34;
+          final nextA1 = base + (2 * math.pi / teeth) - 0.34;
+
+          final p1 = Offset(12 * s + rIn * math.cos(a1), 12 * s + rIn * math.sin(a1));
+          final p2 = Offset(12 * s + rOut * math.cos(a2), 12 * s + rOut * math.sin(a2));
+          final p3 = Offset(12 * s + rOut * math.cos(a3), 12 * s + rOut * math.sin(a3));
+          final p4 = Offset(12 * s + rIn * math.cos(a4), 12 * s + rIn * math.sin(a4));
+          final pNext = Offset(12 * s + rIn * math.cos(nextA1), 12 * s + rIn * math.sin(nextA1));
+
+          if (k == 0) {
+            gear.moveTo(p1.dx, p1.dy);
+          }
+          gear
+            ..lineTo(p2.dx, p2.dy)
+            ..lineTo(p3.dx, p3.dy)
+            ..lineTo(p4.dx, p4.dy)
+            ..arcToPoint(
+              pNext,
+              radius: Radius.circular(rIn),
+              clockwise: true,
+            );
+        }
+        gear.close();
+        canvas.drawPath(gear, stroke);
+        break;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PokeetNavIconPainter oldDelegate) =>
+      oldDelegate.index != index ||
+      oldDelegate.color != color ||
+      oldDelegate.active != active;
 }
