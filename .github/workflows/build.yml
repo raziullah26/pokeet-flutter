@@ -26,6 +26,18 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Ensure Permanent Release Keystore
+        run: |
+          mkdir -p android/app
+          if [ ! -f android/app/pokeet-release.jks ]; then
+            keytool -genkeypair -v -keystore android/app/pokeet-release.jks -storetype PKCS12 -keyalg RSA -keysize 2048 -validity 10000 -alias pokeet -storepass pokeetReleaseKey2026 -keypass pokeetReleaseKey2026 -dname "CN=Pokeet, OU=Dev, O=Pokeet, L=Pabna, S=Rajshahi, C=BD"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add android/app/pokeet-release.jks
+            git commit -m "chore: add permanent release keystore [skip ci]"
+            git push
+          fi
+
       - name: Bundle Offline Bengali Font
         run: |
           mkdir -p assets/fonts
@@ -39,11 +51,13 @@ jobs:
           mkdir -p .backup_android
           [ -f android/app/build.gradle.kts ] && cp android/app/build.gradle.kts .backup_android/
           [ -f android/app/proguard-rules.pro ] && cp android/app/proguard-rules.pro .backup_android/
+          [ -f android/app/pokeet-release.jks ] && cp android/app/pokeet-release.jks .backup_android/
 
           flutter create . --org com.pokeet --project-name pokeet --platforms=android
 
           [ -f .backup_android/build.gradle.kts ] && cp .backup_android/build.gradle.kts android/app/build.gradle.kts
           [ -f .backup_android/proguard-rules.pro ] && cp .backup_android/proguard-rules.pro android/app/proguard-rules.pro
+          [ -f .backup_android/pokeet-release.jks ] && cp .backup_android/pokeet-release.jks android/app/pokeet-release.jks
           [ -f android/app/build.gradle.kts ] && rm -f android/app/build.gradle
           rm -rf .backup_android
 

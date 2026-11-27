@@ -15,18 +15,27 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.pokeet.pokeet"
+        applicationId = "com.pokeet.flutter"
         minSdk = 24
         targetSdk = 35
         versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
         versionName = "2.0.${System.getenv("GITHUB_RUN_NUMBER") ?: "0"}"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("pokeet-release.jks")
+            storePassword = "pokeetReleaseKey2026"
+            keyAlias = "pokeet"
+            keyPassword = "pokeetReleaseKey2026"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
             isShrinkResources = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
