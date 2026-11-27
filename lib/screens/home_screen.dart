@@ -14,13 +14,30 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final red = isDark ? PokeetColors.redDark : PokeetColors.redLight;
-    final today = DateTime.now();
+    final now = DateTime.now();
+
     final todayTxs = ctrl.txs.where((t) {
       final d = DateTime.fromMillisecondsSinceEpoch(t.dateMs);
-      return d.year == today.year && d.month == today.month && d.day == today.day;
+      return d.year == now.year && d.month == now.month && d.day == now.day;
     }).toList();
+
+    final monthTxs = ctrl.txs.where((t) {
+      final d = DateTime.fromMillisecondsSinceEpoch(t.dateMs);
+      return d.year == now.year && d.month == now.month;
+    }).toList();
+
     final todayInc = todayTxs.where((t) => t.type == 'income').fold(0.0, (s, t) => s + t.amount);
     final todayExp = todayTxs.where((t) => t.type == 'expense').fold(0.0, (s, t) => s + t.amount);
+
+    final monthInc = monthTxs.where((t) => t.type == 'income').fold(0.0, (s, t) => s + t.amount);
+    final monthExp = monthTxs.where((t) => t.type == 'expense').fold(0.0, (s, t) => s + t.amount);
+    final monthNet = monthInc - monthExp;
+
+    final hasBudget = ctrl.monthlyBudget > 0;
+    final budgetPct = hasBudget ? ((monthExp / ctrl.monthlyBudget) * 100).round() : 0;
+    final budgetRatio = hasBudget ? (monthExp / ctrl.monthlyBudget).clamp(0.0, 1.0) : 0.0;
+    final isOverBudget = hasBudget && monthExp > ctrl.monthlyBudget;
+    final budgetRemain = ctrl.monthlyBudget - monthExp;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 110),
@@ -28,15 +45,22 @@ class HomeScreen extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(ctrl.tr('স্বাগতম,', 'Welcome,'), style: TextStyle(color: isDark ? Colors.white70 : Colors.black54)),
-                Text(
-                  ctrl.userName,
-                  style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: PokeetColors.green),
-                ),
-              ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    ctrl.tr('স্বাগতম,', 'Welcome,'),
+                    style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                  ),
+                  Text(
+                    ctrl.userName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: PokeetColors.green),
+                  ),
+                ],
+              ),
             ),
             CircleAvatar(
               radius: 22,
@@ -96,6 +120,29 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    _SummaryChip(
+                      text: '${ctrl.tr('এই মাস', 'This Month')} • ${PokeetFmt.toDigits('${now.month}/${now.year}', ctrl.isEn)}',
+                      color: PokeetColors.blue,
+                    ),
+                    _SummaryChip(
+                      text: '${ctrl.tr('আয়', 'Inc')} ${PokeetFmt.money(monthInc, isEn: ctrl.isEn, hide: ctrl.hideBalance)}',
+                      color: PokeetColors.green,
+                    ),
+                    _SummaryChip(
+                      text: '${ctrl.tr('ব্যয়', 'Exp')} ${PokeetFmt.money(monthExp, isEn: ctrl.isEn, hide: ctrl.hideBalance)}',
+                      color: red,
+                    ),
+                    _SummaryChip(
+                      text: '${ctrl.tr('নেট', 'Net')} ${PokeetFmt.money(monthNet, isEn: ctrl.isEn, hide: ctrl.hideBalance)}',
+                      color: monthNet < 0 ? red : PokeetColors.green,
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -131,8 +178,10 @@ class HomeScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(ctrl.tr('আজকের সারসংক্ষেপ', "Today's Summary"),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                Text(
+                  ctrl.tr('আজকের সারসংক্ষেপ', "Today's Summary"),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -178,26 +227,43 @@ class HomeScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(ctrl.tr('মাসিক বাজেট', 'Monthly Budget'),
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                       Text(
-                        ctrl.monthlyBudget > 0
-                            ? '${PokeetFmt.toDigits(((ctrl.totalExpense / ctrl.monthlyBudget) * 100).round().toString(), ctrl.isEn)}%'
+                        ctrl.tr('মাসিক বাজেট', 'Monthly Budget'),
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                      ),
+                      Text(
+                        hasBudget
+                            ? '${PokeetFmt.toDigits('$budgetPct', ctrl.isEn)}%'
                             : ctrl.tr('সেট করুন +', 'Set +'),
-                        style: const TextStyle(fontWeight: FontWeight.w800, color: PokeetColors.green),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          color: isOverBudget ? red : PokeetColors.green,
+                        ),
                       ),
                     ],
                   ),
-                  if (ctrl.monthlyBudget > 0) ...[
+                  if (hasBudget) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      '${PokeetFmt.money(monthExp, isEn: ctrl.isEn, hide: ctrl.hideBalance)} / ${PokeetFmt.money(ctrl.monthlyBudget, isEn: ctrl.isEn, hide: ctrl.hideBalance)}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
                     const SizedBox(height: 10),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(10),
                       child: LinearProgressIndicator(
-                        value: (ctrl.totalExpense / ctrl.monthlyBudget).clamp(0.0, 1.0),
+                        value: budgetRatio,
                         minHeight: 10,
                         backgroundColor: Colors.black.withValues(alpha: 0.2),
-                        color: ctrl.totalExpense > ctrl.monthlyBudget ? red : PokeetColors.green,
+                        color: isOverBudget ? red : PokeetColors.green,
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      budgetRemain >= 0
+                          ? '${ctrl.tr('বাকি', 'Left')} ${PokeetFmt.money(budgetRemain, isEn: ctrl.isEn, hide: ctrl.hideBalance)}'
+                          : '${ctrl.tr('বাজেট ছাড়িয়েছে', 'Over budget')} ${PokeetFmt.money(budgetRemain.abs(), isEn: ctrl.isEn, hide: ctrl.hideBalance)}',
+                      style: TextStyle(fontSize: 12, color: isOverBudget ? red : null),
                     ),
                   ],
                 ],
@@ -232,6 +298,28 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
+class _SummaryChip extends StatelessWidget {
+  final String text;
+  final Color color;
+  const _SummaryChip({required this.text, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color),
+      ),
+    );
+  }
+}
+
 class _MiniStat extends StatelessWidget {
   final IconData icon;
   final Color color;
@@ -254,8 +342,12 @@ class _MiniStat extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label, style: const TextStyle(fontSize: 12)),
-              Text(amount, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontWeight: FontWeight.w800, color: color)),
+              Text(
+                amount,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontWeight: FontWeight.w800, color: color),
+              ),
             ],
           ),
         ),
@@ -327,8 +419,12 @@ class _TodayTile extends StatelessWidget {
         children: [
           Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
           const SizedBox(height: 4),
-          Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: color)),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: color),
+          ),
         ],
       ),
     );
