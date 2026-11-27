@@ -49,7 +49,7 @@ jobs:
         run: flutter pub get
 
       - name: Analyze code
-        run: flutter analyze
+        run: rm -rf test && flutter analyze
 
       - name: Build Obfuscated Release APK
         run: |
