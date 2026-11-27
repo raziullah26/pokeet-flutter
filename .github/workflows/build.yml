@@ -69,7 +69,7 @@ jobs:
 
       - name: Build Release APK
         run: |
-          flutter build apk --release --split-per-abi
+          flutter build apk --release --split-per-abi --tree-shake-icons
           cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "build/app/outputs/flutter-apk/Pokeet-v2.0.${{ github.run_number }}.apk"
 
       - name: Publish APK to GitHub Releases
