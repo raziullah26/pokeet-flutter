@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.pokeet.app"
+    namespace = "com.pokeet.pokeet"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
@@ -14,26 +14,18 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-
     defaultConfig {
-        applicationId = "com.pokeet.app"
+        applicationId = "com.pokeet.pokeet"
         minSdk = 24
         targetSdk = 35
         versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
         versionName = "2.0.${System.getenv("GITHUB_RUN_NUMBER") ?: "0"}"
-        ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
-        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
             isShrinkResources = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
             signingConfig = signingConfigs.getByName("debug")
         }
     }
