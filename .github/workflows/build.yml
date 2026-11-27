@@ -53,15 +53,16 @@ jobs:
       - name: Analyze code
         run: rm -rf test && flutter analyze || true
 
-      - name: Build Obfuscated Release APK
+      - name: Build Release APK
         run: |
           flutter build apk --release --split-per-abi
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "build/app/outputs/flutter-apk/Pokeet-v2.0.${{ github.run_number }}.apk"
 
       - name: Publish APK to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest
-          name: Pokeet Latest Release
-          files: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          tag_name: v2.0.${{ github.run_number }}
+          name: Pokeet v2.0.${{ github.run_number }}
+          files: build/app/outputs/flutter-apk/Pokeet-v2.0.${{ github.run_number }}.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
