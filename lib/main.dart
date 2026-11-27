@@ -7,6 +7,8 @@ import 'screens/notes_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/transactions_screen.dart';
 import 'theme/app_theme.dart';
+import 'widgets/floating_nav.dart';
+import 'widgets/pokeet_ui.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -127,26 +129,13 @@ class _PokeetShellState extends State<PokeetShell> {
     ];
 
     return Scaffold(
-      body: SafeArea(child: pages[_idx]),
       extendBody: true,
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(34),
-          child: NavigationBar(
-            height: 64,
-            selectedIndex: _idx,
-            labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-            onDestinationSelected: (i) => setState(() => _idx = i),
-            destinations: const [
-              NavigationDestination(icon: Icon(Icons.home_rounded), label: 'Home'),
-              NavigationDestination(icon: Icon(Icons.swap_horiz_rounded), label: 'Tx'),
-              NavigationDestination(icon: Icon(Icons.pie_chart_rounded), label: 'Analysis'),
-              NavigationDestination(icon: Icon(Icons.edit_note_rounded), label: 'Notes'),
-              NavigationDestination(icon: Icon(Icons.settings_rounded), label: 'Settings'),
-            ],
-          ),
-        ),
+      body: PokeetBackground(
+        child: SafeArea(bottom: false, child: pages[_idx]),
+      ),
+      bottomNavigationBar: PokeetFloatingNav(
+        currentIndex: _idx,
+        onTap: (i) => setState(() => _idx = i),
       ),
     );
   }
